@@ -1,0 +1,703 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cadrona Lift Forecast Dashboard</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary: #1e40af;
+            --success: #16a34a;
+            --warning: #ea580c;
+            --danger: #dc2626;
+            --bg: #f8fafc;
+            --card-bg: #ffffff;
+            --text: #1e293b;
+            --text-light: #64748b;
+            --border: #e2e8f0;
+            --purple-dark: #6d28d9;
+            --purple-light: #c4b5fd;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            color: var(--text);
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        header {
+            text-align: center;
+            color: white;
+            margin-bottom: 20px;
+        }
+
+        h1 {
+            font-size: 2em;
+            margin-bottom: 5px;
+        }
+
+        .subtitle {
+            font-size: 0.95em;
+            opacity: 0.9;
+            margin-bottom: 10px;
+        }
+
+        .loading-bar {
+            height: 4px;
+            background: rgba(255,255,255,0.3);
+            border-radius: 2px;
+            overflow: hidden;
+            max-width: 300px;
+            margin: 10px auto;
+        }
+
+        .loading-progress {
+            height: 100%;
+            background: linear-gradient(90deg, #4ade80, #60a5fa);
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+
+        .card {
+            background: var(--card-bg);
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            border: 1px solid var(--border);
+            margin-bottom: 20px;
+        }
+
+        .card h2 {
+            font-size: 1.2em;
+            margin-bottom: 16px;
+            color: var(--text);
+            border-bottom: 2px solid var(--primary);
+            padding-bottom: 10px;
+        }
+
+        .info-box {
+            background: #dbeafe;
+            border-left: 4px solid var(--primary);
+            padding: 12px;
+            border-radius: 4px;
+            margin-bottom: 16px;
+            font-size: 0.9em;
+            line-height: 1.5;
+        }
+
+        .error-box {
+            background: #fef2f2;
+            border-left: 4px solid var(--danger);
+            padding: 12px;
+            border-radius: 4px;
+            color: var(--danger);
+            margin-bottom: 16px;
+            font-size: 0.9em;
+        }
+
+        .success-box {
+            background: #f0fdf4;
+            border-left: 4px solid var(--success);
+            padding: 12px;
+            border-radius: 4px;
+            color: var(--success);
+            margin-bottom: 16px;
+            font-size: 0.9em;
+        }
+
+        .status-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+
+        .status-item {
+            background: var(--bg);
+            padding: 12px;
+            border-radius: 8px;
+            border-left: 4px solid var(--primary);
+        }
+
+        .status-label {
+            font-size: 0.8em;
+            color: var(--text-light);
+            margin-bottom: 4px;
+        }
+
+        .status-value {
+            font-size: 1.4em;
+            font-weight: bold;
+            color: var(--primary);
+        }
+
+        .stoke-meter {
+            background: linear-gradient(135deg, #c4b5fd 0%, #6d28d9 100%);
+            color: white;
+            padding: 24px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .stoke-score {
+            font-size: 3.5em;
+            font-weight: bold;
+            margin: 10px 0;
+        }
+
+        .stoke-label {
+            font-size: 1.5em;
+            margin-bottom: 12px;
+        }
+
+        .stoke-breakdown {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 12px;
+            margin-top: 16px;
+        }
+
+        .stoke-factor {
+            background: rgba(255,255,255,0.2);
+            padding: 8px;
+            border-radius: 6px;
+            font-size: 0.8em;
+        }
+
+        .stoke-factor-value {
+            font-size: 1.2em;
+            font-weight: bold;
+            margin: 4px 0;
+        }
+
+        .lift-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        .lift-card {
+            background: var(--bg);
+            padding: 12px;
+            border-radius: 8px;
+            border: 2px solid var(--border);
+            text-align: center;
+            transition: all 0.3s;
+        }
+
+        .lift-card:hover {
+            border-color: var(--primary);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .lift-card.high {
+            border-color: var(--success);
+            background: #f0fdf4;
+        }
+
+        .lift-card.medium {
+            border-color: var(--warning);
+            background: #fef3c7;
+        }
+
+        .lift-card.low {
+            border-color: var(--danger);
+            background: #fef2f2;
+        }
+
+        .lift-name {
+            font-weight: bold;
+            font-size: 0.9em;
+            margin-bottom: 6px;
+        }
+
+        .lift-prob {
+            font-size: 1.8em;
+            font-weight: bold;
+            color: var(--primary);
+            margin-bottom: 4px;
+        }
+
+        .lift-confidence {
+            font-size: 0.75em;
+            color: var(--text-light);
+        }
+
+        .weather-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 12px;
+        }
+
+        .weather-item {
+            background: var(--bg);
+            padding: 12px;
+            border-radius: 8px;
+            text-align: center;
+            border-left: 4px solid var(--primary);
+        }
+
+        .weather-icon {
+            font-size: 2em;
+            margin-bottom: 4px;
+        }
+
+        .weather-value {
+            font-size: 1.3em;
+            font-weight: bold;
+            margin-bottom: 4px;
+        }
+
+        .weather-label {
+            font-size: 0.75em;
+            color: var(--text-light);
+        }
+
+        button {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 10px 16px;
+            border-radius: 6px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        button:hover {
+            background: #1e3a8a;
+            transform: translateY(-2px);
+        }
+
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .controls {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+
+        .timestamp {
+            font-size: 0.85em;
+            color: var(--text-light);
+            text-align: center;
+            margin-top: 16px;
+        }
+
+        @media (max-width: 768px) {
+            .stoke-breakdown {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            .lift-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            .weather-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            .controls {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🎿 Cardrona Lift Forecast</h1>
+            <p class="subtitle">Cloud-hosted from Vercel • Real-time Open-Meteo data</p>
+            <div class="loading-bar">
+                <div class="loading-progress" id="progressBar"></div>
+            </div>
+        </header>
+
+        <div id="mainContent" style="display: none;">
+            <!-- Stoke Meter -->
+            <div class="stoke-meter" id="stokeMeter">
+                <div style="font-size: 0.9em; opacity: 0.9;" id="stokeDate">Monday, 21 Sept</div>
+                <div class="stoke-label" id="stokeLabel">GOOD DAY</div>
+                <div class="stoke-score" id="stokeScore">65</div>
+                <div style="font-size: 0.95em; margin-bottom: 12px;" id="stokeWind">💨 NW 32 km/h ➡️</div>
+                <div class="stoke-breakdown" id="stokeBreakdown">
+                    <div class="stoke-factor">
+                        <div class="stoke-label">❄️ Snow</div>
+                        <div class="stoke-factor-value" id="snowScore">0</div>
+                    </div>
+                    <div class="stoke-factor">
+                        <div class="stoke-label">☀️ Sun</div>
+                        <div class="stoke-factor-value" id="sunScore">0</div>
+                    </div>
+                    <div class="stoke-factor">
+                        <div class="stoke-label">💨 Wind</div>
+                        <div class="stoke-factor-value" id="windScore">0</div>
+                    </div>
+                    <div class="stoke-factor">
+                        <div class="stoke-label">🌡️ Temp</div>
+                        <div class="stoke-factor-value" id="tempScore">0</div>
+                    </div>
+                    <div class="stoke-factor">
+                        <div class="stoke-label">🚡 Lifts</div>
+                        <div class="stoke-factor-value" id="liftsScore">0</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Status -->
+            <div class="card">
+                <h2>Data Status</h2>
+                <div class="status-grid">
+                    <div class="status-item">
+                        <div class="status-label">Days Loaded</div>
+                        <div class="status-value" id="daysLoaded">0</div>
+                    </div>
+                    <div class="status-item">
+                        <div class="status-label">Last Updated</div>
+                        <div class="status-value" id="lastUpdated" style="font-size: 1em;">--</div>
+                    </div>
+                    <div class="status-item">
+                        <div class="status-label">Tomorrow</div>
+                        <div class="status-value" id="tomorrowDate" style="font-size: 1em;">--</div>
+                    </div>
+                </div>
+                <div id="statusMessage"></div>
+            </div>
+
+            <!-- Tomorrow's Lift Probabilities -->
+            <div class="card">
+                <h2>Tomorrow's Lift Status</h2>
+                <div class="lift-grid" id="liftGrid"></div>
+            </div>
+
+            <!-- Weather Forecast -->
+            <div class="card">
+                <h2>Tomorrow's Weather</h2>
+                <div class="weather-grid" id="weatherGrid"></div>
+            </div>
+
+            <!-- Hourly Wind Pattern -->
+            <div class="card">
+                <h2>Hourly Wind Pattern (Tomorrow)</h2>
+                <div style="font-size: 0.9em; color: var(--text-light); line-height: 1.6;">
+                    <div id="hourlyWind"></div>
+                </div>
+            </div>
+
+            <!-- Controls -->
+            <div class="card">
+                <h2>Data Management</h2>
+                <div class="controls">
+                    <button onclick="location.reload()">🔄 Refresh Data</button>
+                    <button onclick="exportData()">📥 Export Historical Data</button>
+                </div>
+                <div class="timestamp" id="timestamp"></div>
+            </div>
+        </div>
+
+        <div id="loadingContent">
+            <div class="card">
+                <h2>Loading Dashboard...</h2>
+                <div class="info-box">
+                    📡 Fetching historical weather data (June 2022 → Today)
+                    <br>📊 Processing hourly wind patterns
+                    <br>🎯 Calculating lift probabilities
+                    <br>
+                    <br><strong>This will take 30-60 seconds...</strong>
+                </div>
+                <div id="loadingStatus" style="color: var(--text-light); font-size: 0.9em;"></div>
+            </div>
+        </div>
+
+        <div id="errorContent" style="display: none;">
+            <div class="card">
+                <h2>⚠️ Error Loading Data</h2>
+                <div class="error-box" id="errorMessage"></div>
+                <button onclick="location.reload()">Try Again</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = typeof window !== 'undefined' && window.location.origin.includes('vercel') 
+            ? window.location.origin 
+            : 'http://localhost:3000'
+
+        const LIFT_NAMES = [
+            "McDougall's", "Captain's Express", "Whitestar", "Willow's Quad",
+            "Valley View", "Soho Basin", "Pipe Platter", "Park T-bar", "Learner"
+        ]
+
+        const LIFT_EXPOSURE = {
+            0: { N:0.3, NE:0.5, E:0.8, SE:0.7, S:0.2, SW:0.1, W:0.2, NW:0.4 },
+            1: { N:0.4, NE:0.6, E:0.9, SE:0.8, S:0.3, SW:0.2, W:0.3, NW:0.5 },
+            2: { N:0.5, NE:0.4, E:0.6, SE:0.5, S:0.4, SW:0.3, W:0.4, NW:0.6 },
+            3: { N:0.6, NE:0.7, E:0.5, SE:0.9, S:0.8, SW:0.7, W:0.6, NW:0.5 },
+            4: { N:0.4, NE:0.3, E:0.5, SE:0.4, S:0.5, SW:0.4, W:0.5, NW:0.3 },
+            5: { N:0.7, NE:0.8, E:0.7, SE:1.0, S:0.9, SW:0.8, W:0.7, NW:0.6 },
+            6: { N:0.2, NE:0.2, E:0.3, SE:0.2, S:0.2, SW:0.2, W:0.2, NW:0.2 },
+            7: { N:0.2, NE:0.2, E:0.3, SE:0.2, S:0.2, SW:0.2, W:0.2, NW:0.2 },
+            8: { N:0.1, NE:0.1, E:0.2, SE:0.1, S:0.1, SW:0.1, W:0.1, NW:0.1 }
+        }
+
+        let historicalData = []
+        let tomorrowForecast = null
+
+        function getDirectionName(degrees) {
+            if (!degrees && degrees !== 0) return 'N'
+            const dirs = ['N', 'NNE', 'NE', 'ENE', 'E', 'ESE', 'SE', 'SSE', 'S', 'SSW', 'SW', 'WSW', 'W', 'WNW', 'NW', 'NNW']
+            const idx = Math.round((degrees % 360) / 22.5)
+            return dirs[idx % 16]
+        }
+
+        async function fetchData() {
+            try {
+                updateProgress(20)
+                document.getElementById('loadingStatus').innerHTML = '📡 Fetching historical data...'
+
+                const historicalRes = await fetch(`${API_BASE}/api/historical`)
+                if (!historicalRes.ok) throw new Error(`Historical API error: ${historicalRes.status}`)
+                const historicalRawData = await historicalRes.json()
+                processHistoricalData(historicalRawData)
+
+                updateProgress(60)
+                document.getElementById('loadingStatus').innerHTML = '🔮 Fetching forecast...'
+
+                const forecastRes = await fetch(`${API_BASE}/api/forecast`)
+                if (!forecastRes.ok) throw new Error(`Forecast API error: ${forecastRes.status}`)
+                tomorrowForecast = await forecastRes.json()
+
+                updateProgress(90)
+                document.getElementById('loadingStatus').innerHTML = '🎯 Rendering dashboard...'
+                renderDashboard()
+                updateProgress(100)
+
+                document.getElementById('loadingContent').style.display = 'none'
+                document.getElementById('mainContent').style.display = 'block'
+
+            } catch (error) {
+                console.error('Error:', error)
+                showError(`Failed to load data: ${error.message}`)
+            }
+        }
+
+        function processHistoricalData(data) {
+            const daily = data.daily
+            historicalData = []
+
+            for (let i = 0; i < daily.time.length; i++) {
+                const date = daily.time[i]
+                const windSpeed = Math.round(daily.wind_speed_10m_max[i]) || 0
+                const windDir = getDirectionName(daily.wind_direction_10m_dominant?.[i])
+                const snow = Math.round(daily.snowfall_sum[i] * 10) / 10
+                const tempMean = Math.round(daily.temperature_2m_mean[i])
+
+                historicalData.push({
+                    date,
+                    wind_speed: windSpeed,
+                    wind_direction: windDir,
+                    snow,
+                    temp: tempMean,
+                    lifts_open: estimateLiftsOpen(windSpeed, windDir)
+                })
+            }
+
+            document.getElementById('daysLoaded').textContent = historicalData.length
+        }
+
+        function estimateLiftsOpen(windSpeed, windDirection) {
+            if (!windSpeed) return 9
+            
+            const exposure = {
+                'N': 0.2, 'NNE': 0.3, 'NE': 0.4, 'ENE': 0.5, 'E': 0.8, 'ESE': 0.9, 'SE': 0.95, 'SSE': 0.9,
+                'S': 0.3, 'SSW': 0.2, 'SW': 0.15, 'WSW': 0.1, 'W': 0.15, 'WNW': 0.2, 'NW': 0.25, 'NNW': 0.2
+            }[windDirection] || 0.5
+
+            if (windSpeed < 30) return 9
+            if (windSpeed < 40) return Math.max(7, Math.round(9 * (1 - exposure * 0.3)))
+            if (windSpeed < 50) return Math.max(5, Math.round(9 * (1 - exposure * 0.6)))
+            if (windSpeed < 60) return Math.max(3, Math.round(9 * (1 - exposure * 0.8)))
+            return Math.max(1, Math.round(9 * (1 - exposure)))
+        }
+
+        function renderDashboard() {
+            if (!tomorrowForecast) return
+
+            const tomorrow = new Date()
+            tomorrow.setDate(tomorrow.getDate() + 1)
+
+            const tomorrowIdx = 1
+            const daily = tomorrowForecast.daily
+            const hourly = tomorrowForecast.hourly
+
+            const windSpeed = Math.round(daily.wind_speed_10m_max[tomorrowIdx]) || 0
+            const windDir = getDirectionName(daily.wind_direction_10m_dominant?.[tomorrowIdx])
+            const gustSpeed = Math.round(daily.wind_gusts_10m_max[tomorrowIdx]) || 0
+            const tempMax = Math.round(daily.temperature_2m_max[tomorrowIdx])
+            const tempMin = Math.round(daily.temperature_2m_min[tomorrowIdx])
+            const snowfall = Math.round(daily.snowfall_sum[tomorrowIdx] * 10) / 10
+
+            const stokeScore = calculateStoke(snowfall, windSpeed, tempMax, windDir)
+            renderStokeMeter(stokeScore, windSpeed, windDir, tomorrow)
+
+            const avgLiftProbs = calculateLiftProbabilities(windSpeed, windDir)
+            renderLifts(avgLiftProbs)
+
+            renderWeather(tempMax, tempMin, windSpeed, gustSpeed, snowfall)
+            renderHourlyWind(hourly, tomorrowIdx)
+
+            document.getElementById('tomorrowDate').textContent = tomorrow.toLocaleDateString('en-NZ', { weekday: 'short', month: 'short', day: 'numeric' })
+            document.getElementById('lastUpdated').textContent = new Date().toLocaleTimeString('en-NZ')
+            document.getElementById('timestamp').textContent = `Last updated: ${new Date().toLocaleString('en-NZ')}`
+        }
+
+        function calculateStoke(snow, wind, temp, dir) {
+            let score = 0
+            if (snow > 10) score += 30
+            else if (snow > 5) score += 25
+            else if (snow > 2) score += 15
+            else if (snow > 0) score += 5
+            
+            score += 20 // Default sun score
+            
+            if (wind < 30) score += 25
+            else if (wind < 40) score += 20
+            else if (wind < 50) score += 10
+            else score += 0
+            
+            if (temp >= -5 && temp <= 2) score += 10
+            else if (temp >= -10 && temp <= 5) score += 7
+            else if (temp > 5) score += 3
+            else score += 4
+            
+            const avgLifts = estimateLiftsOpen(wind, dir)
+            if (avgLifts > 7) score += 10
+            else if (avgLifts > 5) score += 6
+            else if (avgLifts > 3) score += 3
+            
+            return Math.min(100, Math.max(0, score))
+        }
+
+        function calculateLiftProbabilities(windSpeed, windDir) {
+            const probs = []
+            for (let i = 0; i < 9; i++) {
+                const exposure = LIFT_EXPOSURE[i][windDir] || 0.5
+                let prob = 1.0
+                if (windSpeed > 50) {
+                    prob -= exposure * 0.8
+                } else if (windSpeed > 40) {
+                    prob -= exposure * 0.5
+                } else if (windSpeed > 30) {
+                    prob -= exposure * 0.2
+                }
+                probs.push(Math.max(0.1, Math.min(1.0, prob)))
+            }
+            return probs
+        }
+
+        function renderStokeMeter(score, wind, dir, date) {
+            let label = 'ROUGH', emoji = '😤'
+            if (score >= 85) { label = 'EPIC'; emoji = '🤙' }
+            else if (score >= 70) { label = 'GREAT'; emoji = '🎿' }
+            else if (score >= 55) { label = 'GOOD'; emoji = '⛷️' }
+            else if (score >= 40) { label = 'FAIR'; emoji = '🏂' }
+
+            document.getElementById('stokeScore').textContent = Math.round(score)
+            document.getElementById('stokeLabel').textContent = `${label} ${emoji}`
+            document.getElementById('stokeDate').textContent = date.toLocaleDateString('en-NZ', { weekday: 'long', month: 'short', day: 'numeric' })
+            document.getElementById('stokeWind').textContent = `💨 ${dir} ${wind} km/h ➡️`
+        }
+
+        function renderLifts(probs) {
+            const grid = document.getElementById('liftGrid')
+            grid.innerHTML = ''
+            probs.forEach((prob, idx) => {
+                const percent = Math.round(prob * 100)
+                let className = 'high'
+                if (percent < 50) className = 'low'
+                else if (percent < 75) className = 'medium'
+                const card = document.createElement('div')
+                card.className = `lift-card ${className}`
+                card.innerHTML = `
+                    <div class="lift-name">${LIFT_NAMES[idx]}</div>
+                    <div class="lift-prob">${percent}%</div>
+                    <div class="lift-confidence">Open tomorrow</div>
+                `
+                grid.appendChild(card)
+            })
+        }
+
+        function renderWeather(tempMax, tempMin, windSpeed, gust, snow) {
+            const grid = document.getElementById('weatherGrid')
+            grid.innerHTML = `
+                <div class="weather-item"><div class="weather-icon">🌡️</div><div class="weather-value">${tempMax}°C</div><div class="weather-label">High</div></div>
+                <div class="weather-item"><div class="weather-icon">❄️</div><div class="weather-value">${tempMin}°C</div><div class="weather-label">Low</div></div>
+                <div class="weather-item"><div class="weather-icon">💨</div><div class="weather-value">${windSpeed} km/h</div><div class="weather-label">Wind</div></div>
+                <div class="weather-item"><div class="weather-icon">💨</div><div class="weather-value">${gust} km/h</div><div class="weather-label">Gust</div></div>
+                <div class="weather-item"><div class="weather-icon">❄️</div><div class="weather-value">${snow} cm</div><div class="weather-label">Snow</div></div>
+            `
+        }
+
+        function renderHourlyWind(hourly, dayIdx) {
+            const dayStart = dayIdx * 8
+            const hourlyDiv = document.getElementById('hourlyWind')
+            let html = ''
+            for (let i = 0; i < 8; i++) {
+                const idx = dayStart + i
+                if (idx >= hourly.time.length) break
+                const time = new Date(hourly.time[idx])
+                const hour = time.getHours().toString().padStart(2, '0')
+                const wind = Math.round(hourly.wind_speed_10m[idx] || 0)
+                const dir = getDirectionName(hourly.wind_direction_10m[idx])
+                html += `<div style="margin-bottom: 8px;"><strong>${hour}:00</strong> - ${dir} ${wind} km/h</div>`
+            }
+            hourlyDiv.innerHTML = html || '<p>No hourly data available</p>'
+        }
+
+        function updateProgress(percent) {
+            document.getElementById('progressBar').style.width = percent + '%'
+        }
+
+        function showError(message) {
+            document.getElementById('loadingContent').style.display = 'none'
+            document.getElementById('errorContent').style.display = 'block'
+            document.getElementById('errorMessage').textContent = message
+        }
+
+        function exportData() {
+            if (historicalData.length === 0) { alert('No data'); return }
+            const header = 'Date,Wind Speed (km/h),Wind Direction,Temperature (°C),Snowfall (cm),Estimated Lifts\n'
+            const rows = historicalData.map(d => `${d.date},${d.wind_speed},${d.wind_direction},${d.temp},${d.snow},${d.lifts_open}`).join('\n')
+            const csv = header + rows
+            const blob = new Blob([csv], { type: 'text/csv' })
+            const url = window.URL.createObjectURL(blob)
+            const a = document.createElement('a')
+            a.href = url
+            a.download = `cadrona_${new Date().toISOString().split('T')[0]}.csv`
+            document.body.appendChild(a)
+            a.click()
+            window.URL.revokeObjectURL(url)
+            document.body.removeChild(a)
+        }
+
+        window.onload = fetchData
+    </script>
+</body>
+</html>
